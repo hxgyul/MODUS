@@ -1,6 +1,8 @@
 import {
   EmailAuthProvider,
+  getRedirectResult,
   GoogleAuthProvider,
+  signInWithCredential,
   linkWithCredential,
   linkWithPopup,
   linkWithRedirect,
@@ -28,6 +30,8 @@ export function authMessage(e: unknown): string {
     'auth/popup-blocked': '로그인 창이 차단되었습니다. 다시 시도하세요.',
     'auth/network-request-failed': '인터넷 연결을 확인하세요.',
     'auth/operation-not-allowed': 'Firebase 콘솔에서 이 로그인 방식이 아직 켜져 있지 않습니다 (docs/SETUP.md 참고).',
+    'auth/unauthorized-domain': '이 주소가 Firebase 승인된 도메인에 없습니다 (docs/SETUP.md 참고).',
+    'auth/redirect-cancelled-by-user': '로그인을 취소했습니다.',
   };
   return map[code] ?? `계정 작업에 실패했습니다 (${code || (e as Error)?.message})`;
 }
@@ -66,4 +70,24 @@ export async function signInEmail(email: string, password: string) {
 export async function logOut() {
   const { auth } = getFirebase();
   await signOut(auth);
+}
+
+/**
+ * 리디렉션 로그인(홈 화면 앱)에서 돌아왔을 때 결과를 처리한다.
+ * - 성공: 'done'
+ * - 이미 다른 데이터에 연결된 Google 계정을 이 임시 계정에 연결하려 한 경우: 그 계정으로 로그인할 수 있는 함수를 돌려준다.
+ * - 리디렉션으로 돌아온 게 아니면: null
+ */
+export async function completeRedirect(): Promise<null | 'done' | { signInExisting: () => Promise<unknown> }> {
+  const { auth } = getFirebase();
+  try {
+    const r = await getRedirectResult(auth);
+    return r ? 'done' : null;
+  } catch (e) {
+    if ((e as AuthError).code === 'auth/credential-already-in-use') {
+      const cred = GoogleAuthProvider.credentialFromError(e as AuthError);
+      if (cred) return { signInExisting: () => signInWithCredential(auth, cred) };
+    }
+    throw e;
+  }
 }

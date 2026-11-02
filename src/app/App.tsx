@@ -1,5 +1,8 @@
 import { BrowserRouter, NavLink, Outlet, Route, Routes, useLocation } from 'react-router';
 import { useEffect } from 'react';
+import { isFirebaseConfigured } from '@/lib/firebase';
+import { authMessage, completeRedirect } from '@/data/account';
+import { useToast } from '@/components/ui/toast';
 import { DataProvider, useData } from '@/data/DataProvider';
 import { ToastProvider } from '@/components/ui/toast';
 import { Icon, type IconName } from '@/components/ui/icons';
@@ -87,6 +90,26 @@ function Layout() {
   );
 }
 
+/** 홈 화면 앱에서 Google 로그인 후 돌아왔을 때 결과·오류를 알려 준다 */
+function RedirectResult() {
+  const toast = useToast();
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+    completeRedirect()
+      .then((r) => {
+        if (r === 'done') toast({ tone: 'info', text: '로그인했습니다' });
+        else if (r)
+          toast({
+            tone: 'error',
+            text: '이 Google 계정은 이미 데이터가 있는 계정입니다. 그 계정으로 로그인하면 이 기기에서 계정 없이 입력한 내용은 옮겨지지 않습니다.',
+            action: { label: '그 계정으로 로그인', run: () => void r.signInExisting().catch((e) => toast({ tone: 'error', text: authMessage(e) })) },
+          });
+      })
+      .catch((e) => toast({ tone: 'error', text: authMessage(e) }));
+  }, [toast]);
+  return null;
+}
+
 function Themed({ children }: { children: React.ReactNode }) {
   const { settings } = useData();
   return <ThemeProvider mode={settings.theme}>{children}</ThemeProvider>;
@@ -107,6 +130,7 @@ export function App() {
         <Themed>
           <BrowserRouter>
             <TimerProvider>
+              <RedirectResult />
               <Routes>
                 <Route element={<Layout />}>
                   <Route index element={<HomePage />} />

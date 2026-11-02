@@ -54,6 +54,23 @@ npx firebase deploy --only firestore:rules,firestore:indexes --project <프로�
 4. **Site configuration → Environment variables**에 3번의 `VITE_FIREBASE_*` 값을 모두 추가합니다.
 5. 배포 후 사이트 주소를 Firebase **승인된 도메인**에 추가했는지 확인합니다.
 
+## 5-1. 홈 화면 앱(iPhone/iPad)에서 Google 로그인이 되게 하기
+
+iOS 사파리와 홈 화면 앱은 다른 도메인(`firebaseapp.com`)의 저장소를 막아서, 기본 설정으로는 홈 화면 앱의 Google 로그인이 끝나지 않습니다. 로그인 창을 우리 주소에서 열도록 바꿉니다.
+
+1. 빌드할 때 `dist/_redirects`가 자동으로 만들어져 `/__/auth/*`, `/__/firebase/*` 요청을 `https://<프로젝트ID>.firebaseapp.com`으로 전달합니다. (vite.config.ts의 firebaseAuthProxy, 프로젝트 ID는 `VITE_FIREBASE_PROJECT_ID`에서 읽음)
+2. Netlify 환경 변수 `VITE_FIREBASE_AUTH_DOMAIN` 값을 **사이트 주소**로 바꿉니다: `modus-study.netlify.app`
+3. https://console.cloud.google.com/apis/credentials (Firebase와 같은 프로젝트 선택) → OAuth 2.0 클라이언트 ID의 **Web client (auto created by Google Service)** →
+   - 승인된 JavaScript 원본: `https://modus-study.netlify.app`
+   - 승인된 리디렉션 URI: `https://modus-study.netlify.app/__/auth/handler`
+4. 다시 배포한 뒤, 휴대폰에서 기존 홈 화면 아이콘을 지우고 사파리에서 다시 "홈 화면에 추가"합니다.
+
+홈 화면 앱은 사파리와 저장 공간이 따로라서, 사파리에서 로그인했어도 홈 화면 앱 안에서 한 번 더 로그인해야 합니다.
+
+## 5-2. Powered by Netlify 배지 끄기
+
+Netlify → Project configuration → General → **Powered by Netlify badge** → 끄기
+
 ## 6. 휴대폰·태블릿에서
 
 1. 사이트를 열고 **설정 → 계정과 동기화 → Google 계정 연결**(또는 이메일)
