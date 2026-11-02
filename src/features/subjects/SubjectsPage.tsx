@@ -161,9 +161,9 @@ function SubjectEditor({ subject, onClose }: { subject: Subject | null; onClose:
         <input id="subject-name" className="field text-[17px] font-semibold" placeholder="예: 공통수학" value={name} autoFocus onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && save()} />
         {dup && <p className="mt-1.5 text-sm text-omr">같은 이름의 과목이 이미 있습니다.</p>}
         <span className="label mt-5">색상</span>
-        <div className="grid grid-cols-4 gap-2.5" role="radiogroup" aria-label="과목 색상">
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-8" role="radiogroup" aria-label="과목 색상">
           {COLOR_KEYS.map((k) => (
-            <button key={k} role="radio" aria-checked={c === k} aria-label={SUBJECT_COLORS[k].name} onClick={() => setC(k)} className={`grid aspect-square place-items-center rounded-xl ${c === k ? 'ring-2 ring-ink ring-offset-2 ring-offset-surface' : ''}`} style={{ background: color(k) }}>
+            <button key={k} role="radio" aria-checked={c === k} aria-label={SUBJECT_COLORS[k].name} onClick={() => setC(k)} className={`grid h-11 place-items-center rounded-xl ${c === k ? 'ring-2 ring-ink ring-offset-2 ring-offset-surface' : ''}`} style={{ background: color(k) }}>
               {c === k && <Icon name="check" size={18} className="text-white" strokeWidth={2.4} />}
             </button>
           ))}

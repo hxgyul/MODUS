@@ -50,19 +50,24 @@ export function Check({ on, onChange, label, disabled }: { on: boolean; onChange
 export function Sheet({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // onClose는 렌더링마다 새 함수일 수 있다 → 효과를 다시 실행하지 않도록 ref로 보관
+  // (다시 실행되면 입력 중인 칸의 포커스를 빼앗아 휴대폰 키보드가 닫힌다)
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     const prev = document.activeElement as HTMLElement | null;
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current();
     document.addEventListener('keydown', key);
     document.body.style.overflow = 'hidden';
-    ref.current?.focus();
+    // 안쪽 입력 칸이 이미 포커스(autoFocus)를 가졌으면 건드리지 않는다
+    if (ref.current && !ref.current.contains(document.activeElement)) ref.current.focus();
     return () => {
       document.removeEventListener('keydown', key);
       document.body.style.overflow = '';
       prev?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   return createPortal(
     <div className="sheet-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

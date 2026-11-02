@@ -27,6 +27,19 @@ const store = (page, col) => page.evaluate((c) => JSON.parse(localStorage.getIte
 
   // ── 과목 등록 ──
   await page.getByRole('link', { name: '과목 등록하기' }).click();
+  // 회귀 테스트: 화면이 1초마다 갱신돼도 입력 칸 포커스가 유지되어야 함 (휴대폰 키보드가 닫히던 버그)
+  await page.getByRole('button', { name: '과목 추가' }).click();
+  await page.getByLabel('과목 이름').click();
+  await page.clock.runFor(3500);
+  const stillFocused = await page.evaluate(() => document.activeElement && document.activeElement.id === 'subject-name');
+  await page.keyboard.type('국어');
+  await page.clock.runFor(1500);
+  await page.keyboard.type('문학');
+  const typed = await page.getByLabel('과목 이름').inputValue();
+  check('입력 중 3초가 지나도 포커스 유지, 끊김 없이 입력', stillFocused && typed === '국어문학', `focused=${stillFocused}, value=${typed}`);
+  check('색상 16개', (await page.getByRole('radiogroup', { name: '과목 색상' }).getByRole('radio').count()) === 16);
+  await page.screenshot({ path: `${OUT}/m-02a-subject-sheet.png` });
+  await page.getByRole('dialog').getByRole('button', { name: '닫기' }).click();
   for (const name of ['공통수학', '통합과학', '공통영어']) {
     await page.getByRole('button', { name: '과목 추가' }).click();
     await page.getByLabel('과목 이름').fill(name);
